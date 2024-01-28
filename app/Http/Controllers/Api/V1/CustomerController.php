@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\V1\CustomerResource;
 use App\Http\Resources\V1\CustomerCollection;
 use App\Models\Customer;
-use App\Http\Requests\StoreCustomerRequest;
-use App\Http\Requests\UpdateCustomerRequest;
+use App\Http\Requests\V1\StoreCustomerRequest;
+use App\Http\Requests\V1\UpdateCustomerRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Filters\V1\CustomerFilter;
@@ -20,16 +20,20 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $filter = new CustomerFilter();
-        $queryItem = $filter->transform($request);
-        if (count($queryItem) == 0) {
+        $filterItem = $filter->transform($request);
 
+        $customers = Customer::where([$filterItem]);
+        $includeInvoices = $request->query('includeInvoices');
 
-            return new CustomerCollection(Customer::paginate(10));
-        } else {
-            $customers = Customer::where([$queryItem])->paginate();
-            return new CustomerCollection($customers->appends($request->query()));
+        if ($includeInvoices) {
+            $customers = $customers->with('invoices');
         }
+
+
+
+        return new CustomerCollection($customers->paginate()->appends($request->query()));
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -44,7 +48,7 @@ class CustomerController extends Controller
      */
     public function store(StoreCustomerRequest $request)
     {
-        //
+        return new CustomerResource(Customer::create($request->all()));
     }
 
     /**
@@ -52,6 +56,13 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
+        $includeInvoices = request()->query('includeInvoices');
+
+        if ($includeInvoices) {
+
+            return new CustomerResource($customer->loadMissing('invoices'));
+        }
+
         return new CustomerResource($customer);
     }
 
@@ -68,7 +79,8 @@ class CustomerController extends Controller
      */
     public function update(UpdateCustomerRequest $request, Customer $customer)
     {
-        //
+        $data = $customer->update($request->all());
+        return $data;
     }
 
     /**
