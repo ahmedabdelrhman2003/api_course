@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\TaskController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,4 +26,12 @@ Route::group(['prefix' => 'v1'], function () {
     Route::apiResource('customers', CustomerController::class);
     Route::apiResource('invoices', InvoiceController::class);
     Route::post('invoices/bulk', ['uses' => 'App\Http\Controllers\Api\V1\InvoiceController@bulkStore']);
+});
+
+Route::post('login', [AuthController::class, 'login']);
+Route::post('register', [AuthController::class, 'register']);
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::resource('/tasks', TaskController::class);
 });
